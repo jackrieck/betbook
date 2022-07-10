@@ -1,15 +1,18 @@
 use anchor_lang::prelude::*;
+use anchor_lang::solana_program::program::invoke;
 use anchor_spl::{self, token};
+use spl_memo::build_memo;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod betbook1 {
+
     use super::*;
 
     // initialize the betbook
     // define the admin and fee accounts
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
+    pub fn initialize(_ctx: Context<Initialize>) -> Result<()> {
         Ok(())
     }
 
@@ -79,7 +82,22 @@ pub mod betbook1 {
     // send winnings to the winner
     // send fee to me
     // close accounts and send lamports back to challenger
-    pub fn post_result(ctx: Context<PostResult>, _name: String, _challenger: Pubkey) -> Result<()> {
+    pub fn post_result(
+        ctx: Context<PostResult>,
+        _name: String,
+        _challenger: Pubkey,
+        winning_side: bool,
+    ) -> Result<()> {
+        // write memo on chain recording the results of the bet
+        let memo = format!(
+            "winner: {}, winning_side: {}, winnings: {}",
+            ctx.accounts.winner.key().to_string(),
+            winning_side,
+            ctx.accounts.vault.amount
+        );
+        let memo_ix = build_memo(memo.as_bytes(), &[]);
+        invoke(&memo_ix, &[ctx.accounts.memo_program.to_account_info()])?;
+
         // transfer tokens from vault to winner_ata
         let transfer_accounts = token::Transfer {
             from: ctx.accounts.vault.to_account_info(),
@@ -101,7 +119,7 @@ pub mod betbook1 {
     }
 
     // close an open challenge and receive the tokens back from the vault minus the fee
-    pub fn close_challenge(ctx: Context<CloseChallenge>) -> Result<()> {
+    pub fn close_challenge(_ctx: Context<CloseChallenge>) -> Result<()> {
         Ok(())
     }
 }
@@ -207,6 +225,10 @@ pub struct PostResult<'info> {
     pub admin: Signer<'info>,
 
     pub token_program: Program<'info, token::Token>,
+
+    /// CHECK: todo
+    #[account(address = spl_memo::ID)]
+    pub memo_program: AccountInfo<'info>,
 }
 
 #[derive(Accounts)]

@@ -80,7 +80,7 @@ export class Client {
   async acceptChallenge(
     name: string,
     challenger: anchor.web3.PublicKey,
-    mint: anchor.web3.PublicKey,
+    mint: anchor.web3.PublicKey
   ): Promise<string> {
     const [config, _configBump] = anchor.web3.PublicKey.findProgramAddressSync(
       [mint.toBuffer(), Buffer.from(name), challenger.toBuffer()],
@@ -116,18 +116,19 @@ export class Client {
         tokenProgram: splToken.TOKEN_PROGRAM_ID,
       })
       .rpc();
-    
-    return txSig
+
+    return txSig;
   }
 
-  async postResult(name: string, challenger: anchor.web3.PublicKey, mint: anchor.web3.PublicKey, winningSide: boolean): Promise<string> {
+  async postResult(
+    name: string,
+    challenger: anchor.web3.PublicKey,
+    mint: anchor.web3.PublicKey,
+    winningSide: boolean
+  ): Promise<string> {
     // get challenge PDAs
     const [config, _configBump] = anchor.web3.PublicKey.findProgramAddressSync(
-      [
-        mint.toBuffer(),
-        Buffer.from(name),
-        challenger.toBuffer(),
-      ],
+      [mint.toBuffer(), Buffer.from(name), challenger.toBuffer()],
       this.program.programId
     );
 
@@ -141,25 +142,22 @@ export class Client {
         [vault.toBuffer()],
         this.program.programId
       );
-    
+
     // fetch onchain config data
     const configData = await this.program.account.challengeConfig.fetch(config);
 
     // detect winner based on result
     let winner = challenger;
     if (configData.challengerSide !== winningSide) {
-      winner = configData.taker
+      winner = configData.taker;
     }
 
     // get ATA for the wallet, expected to already have one for the given mint
-    const winnerAta = await splToken.getAssociatedTokenAddress(
-      mint,
-      winner,
-    );
+    const winnerAta = await splToken.getAssociatedTokenAddress(mint, winner);
 
     // post result on chain
     const txSig = await this.program.methods
-      .postResult(name, challenger)
+      .postResult(name, challenger, winningSide)
       .accounts({
         mint: mint,
         config: config,
@@ -169,9 +167,12 @@ export class Client {
         winner: winner,
         winnerAta: winnerAta,
         tokenProgram: splToken.TOKEN_PROGRAM_ID,
+        memoProgram: new anchor.web3.PublicKey(
+          "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+        ),
       })
       .rpc();
-    
-    return txSig
+
+    return txSig;
   }
 }
