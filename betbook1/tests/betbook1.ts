@@ -11,24 +11,52 @@ describe("betbook1", () => {
   const program = anchor.workspace.Betbook1 as Program<Betbook1>;
 
   it("full lifecycle with SDK", async () => {
-    const [mint, user1KP, user2KP, adminKP] = await setupSDK(program.provider.connection);
+    const [mint, user1KP, user2KP, adminKP] = await setupSDK(
+      program.provider.connection
+    );
 
-    const user1 = new sdk.Client(program.provider.connection, user1KP, program.programId);
-    const user2 = new sdk.Client(program.provider.connection, user2KP, program.programId);
-    const admin = new sdk.Client(program.provider.connection, adminKP, program.programId);
+    const user1 = new sdk.Client(
+      program.provider.connection,
+      user1KP,
+      program.programId
+    );
+    const user2 = new sdk.Client(
+      program.provider.connection,
+      user2KP,
+      program.programId
+    );
+    const admin = new sdk.Client(
+      program.provider.connection,
+      adminKP,
+      program.programId
+    );
 
     // challenge args
     const challengeName = "come-at-me";
     const challengeAmt = new anchor.BN(100);
     const side = true;
 
-    const createChallengeTxSig = await user1.createChallenge(challengeName, challengeAmt, side, mint);
+    const createChallengeTxSig = await user1.createChallenge(
+      challengeName,
+      challengeAmt,
+      side,
+      mint
+    );
     console.log("createChallengeTxSig: %s", createChallengeTxSig);
 
-    const acceptChallengeTxSig = await user2.acceptChallenge(challengeName, user1.provider.wallet.publicKey, mint);
+    const acceptChallengeTxSig = await user2.acceptChallenge(
+      challengeName,
+      user1.provider.wallet.publicKey,
+      mint
+    );
     console.log("acceptChallengeTxSig: %s", acceptChallengeTxSig);
 
-    const postResultTxSig = await admin.postResult(challengeName, user1.provider.wallet.publicKey, mint, true);
+    const postResultTxSig = await admin.postResult(
+      challengeName,
+      user1.provider.wallet.publicKey,
+      mint,
+      true
+    );
     console.log("postResultTxSig: %s", postResultTxSig);
   });
 });
@@ -124,9 +152,14 @@ async function setup(
 // setup returns [mint, user1, user2]
 // both users are seeded with lamports and the mint
 async function setupSDK(
-  connection: anchor.web3.Connection,
+  connection: anchor.web3.Connection
 ): Promise<
-  [anchor.web3.PublicKey, anchor.web3.Keypair, anchor.web3.Keypair, anchor.web3.Keypair]
+  [
+    anchor.web3.PublicKey,
+    anchor.web3.Keypair,
+    anchor.web3.Keypair,
+    anchor.web3.Keypair
+  ]
 > {
   // pays for all setup and is the mint authority
   const payer = await initWallet(connection);
@@ -204,7 +237,6 @@ async function setupSDK(
 
   return [mint.publicKey, user1, user2, user3];
 }
-
 
 // create a new wallet and seed it with lamports
 async function initWallet(
